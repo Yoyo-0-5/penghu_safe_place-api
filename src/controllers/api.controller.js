@@ -7,7 +7,10 @@ const { getDbConfig } = require("../config/db.config");
 async function getHealth() {
   try {
     const tableNames = await getDatabaseTableNames();
-    const endpoints = tableNames.map((tableName) => `/api/${tableName}`);
+    const endpoints = [
+      "/api/upload",
+      ...tableNames.map((tableName) => `/api/${tableName}`)
+    ];
 
     return {
       statusCode: 200,

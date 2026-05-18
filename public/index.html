@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上傳圖片到 GCS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        input[type="file"] {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #status {
+            text-align: center;
+            margin-top: 20px;
+            min-height: 30px;
+            font-weight: bold;
+        }
+        .image-preview {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .image-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>上傳圖片到 Google Cloud Storage</h2>
+        
+        <!-- 建立一個簡單的表單 -->
+        <form id="uploadForm">
+            <input type="file" id="imageInput" accept="image/*" required>
+            <button type="submit" id="submitBtn">上傳</button>
+        </form>
+
+        <p id="status"></p>
+        <div class="image-preview" id="imagePreview"></div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const uploadForm = document.getElementById('uploadForm');
+        const statusText = document.getElementById('status');
+        const submitBtn = document.getElementById('submitBtn');
+        const imagePreview = document.getElementById('imagePreview');
+
+        // 預覽圖片
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    imagePreview.innerHTML = `<img src="${event.target.result}" alt="圖片預覽">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // 防止表單重新整理頁面
+            
+            const file = imageInput.files[0];
+
+            if (!file) return;
+
+            // 使用 FormData 將圖片打包
+            const formData = new FormData();
+            formData.append('image', file);
+
+            statusText.textContent = '⏳ 上傳中，請稍候...';
+            statusText.style.color = '#ff9800';
+            submitBtn.disabled = true;
+
+            try {
+                // 將圖片發送到我們的 Node.js 後端 API
+                // 注意：指定完整的 URL 為後端服務器地址，而不是 Live Server
+                const response = await fetch('http://localhost:3000/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    statusText.textContent = `✅ 上傳成功！GCS 檔案名稱：${result.fileName}`;
+                    statusText.style.color = 'green';
+                    uploadForm.reset();
+                    imagePreview.innerHTML = '';
+                } else {
+                    statusText.textContent = `❌ 上傳失敗：${result.error}`;
+                    statusText.style.color = 'red';
+                }
+            } catch (error) {
+                console.error('上傳錯誤:', error);
+                statusText.textContent = '❌ 發生預期外的錯誤。請檢查網絡連線。';
+                statusText.style.color = 'red';
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

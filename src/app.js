@@ -2,7 +2,18 @@ const { routeRequest } = require("./routes/api.routes");
 const { sendJson } = require("./utils/response");
 
 async function handleRequest(req, res) {
-  if (req.method !== "GET") {
+  // 处理 CORS 预检请求 (OPTIONS)
+  if (req.method === "OPTIONS") {
+    res.writeHead(200, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    });
+    res.end();
+    return;
+  }
+
+  if (req.method !== "GET" && req.method !== "POST") {
     return sendJson(res, 405, {
       status: "error",
       message: "Method Not Allowed",
@@ -10,7 +21,7 @@ async function handleRequest(req, res) {
   }
 
   try {
-    const response = await routeRequest(req);
+    const response = await routeRequest(req, res);
 
     if (!response) {
       return sendJson(res, 404, {
