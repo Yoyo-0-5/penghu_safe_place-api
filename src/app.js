@@ -1,5 +1,5 @@
 const { routeRequest } = require("./routes/api.routes");
-const { sendJson } = require("./utils/response");
+const { sendJson, sendMarkdown } = require("./utils/response");
 
 async function handleRequest(req, res) {
   // 处理 CORS 预检请求 (OPTIONS)
@@ -28,6 +28,10 @@ async function handleRequest(req, res) {
         status: "error",
         message: "Not Found",
       });
+    }
+
+    if (response.contentType === "text/markdown") {
+      return sendMarkdown(res, response.statusCode, response.body);
     }
 
     return sendJson(res, response.statusCode, response.body);

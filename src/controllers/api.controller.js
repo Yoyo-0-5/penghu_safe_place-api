@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const {
   readDatabaseTableByName,
   getDatabaseTableNames,
@@ -8,6 +10,7 @@ async function getHealth() {
   try {
     const tableNames = await getDatabaseTableNames();
     const endpoints = [
+      "/api/doc",
       "/api/upload",
       ...tableNames.map((tableName) => `/api/${tableName}`)
     ];
@@ -69,7 +72,29 @@ async function getTableData(tableName) {
   }
 }
 
+async function getDoc() {
+  try {
+    const docPath = path.join(__dirname, "../../api/doc.md");
+    const docContent = fs.readFileSync(docPath, "utf8");
+    return {
+      statusCode: 200,
+      contentType: "text/markdown",
+      body: docContent,
+    };
+  } catch (error) {
+    console.error("Error reading doc file:", error);
+    return {
+      statusCode: 500,
+      body: {
+        status: "error",
+        message: "Failed to read API documentation",
+      },
+    };
+  }
+}
+
 module.exports = {
   getHealth,
   getTableData,
+  getDoc,
 };

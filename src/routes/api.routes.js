@@ -1,6 +1,7 @@
 const {
   getHealth,
   getTableData,
+  getDoc,
 } = require("../controllers/api.controller");
 const { handleUpload } = require("../controllers/upload.controller");
 
@@ -16,6 +17,11 @@ async function routeRequest(req, res) {
   // Upload image
   if (req.method === "POST" && pathname === "/api/upload") {
     return handleUpload(req, res);
+  }
+
+  // API Documentation
+  if (req.method === "GET" && pathname === "/api/doc") {
+    return getDoc();
   }
 
   // Dynamic API endpoint: /api/:tableName
