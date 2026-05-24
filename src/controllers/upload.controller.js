@@ -1,4 +1,5 @@
 const multer = require('multer');
+const sharp = require('sharp');
 const { uploadToGCS } = require('../services/gcs.service');
 
 // 設定 Multer (使用記憶體儲存)
@@ -35,9 +36,30 @@ async function handleUpload(req, res) {
           return resolve({ statusCode: 400, body: { error: '沒有選擇任何檔案' } });
         }
 
+        // 壓縮圖片
+        let uploadBuffer = req.file.buffer;
+        const mimeType = req.file.mimetype;
+
+        try {
+          const image = sharp(req.file.buffer).rotate();
+
+          if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
+            uploadBuffer = await image.jpeg({ quality: 75, mozjpeg: true }).toBuffer();
+          } else if (mimeType === 'image/png') {
+            uploadBuffer = await image.png({ compressionLevel: 8, adaptiveFiltering: true }).toBuffer();
+          } else if (mimeType === 'image/webp') {
+            uploadBuffer = await image.webp({ quality: 75 }).toBuffer();
+          } else {
+            uploadBuffer = await image.toBuffer();
+          }
+        } catch (compressError) {
+          console.warn('壓縮圖片失敗，改用原始檔案上傳：', compressError.message);
+          uploadBuffer = req.file.buffer;
+        }
+
         // 上傳至 GCS
         const gcsResult = await uploadToGCS(
-          req.file.buffer,
+          uploadBuffer,
           req.file.originalname,
           req.file.mimetype
         );
